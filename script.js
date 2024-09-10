@@ -1,25 +1,34 @@
 async function getMatchData() {
+    try {
+        const response = await fetch("https://api.cricapi.com/v1/currentMatches?apikey=1a01383b-f275-4960-9dc4-335c104a7dab&offset=0");
+        const data = await response.json();
 
-    return await fetch("https://api.cricapi.com/v1/currentMatches?apikey=1a01383b-f275-4960-9dc4-335c104a7dab&offset=0")
-        .then(data => data.json())
-        .then(data => {
-            if (data.status != "success")return;
+        if (data.status !== "success") {
+            throw new Error("API request failed");
+        }
 
-            const matchesList = data.data;
+        const matchesList = data.data;
 
-            if(!matchesList)return [];
-            
-            //add your api key from cricketdata.org
-            const relevantData = matchesList.filter(match => match.series_id == "{c75f8952-74d4-416f-b7b4-7da4b4e3ae6e}").map(match => `${match.name}, ${match.status}`);
+        if (!matchesList) {
+            throw new Error("No match data available");
+        }
 
-            console.log({relevantData});
+        const relevantData = matchesList.filter(match => match.series_id === "{c75f8952-74d4-416f-b7b4-7da4b4e3ae6e}")
+                                        .map(match => `${match.name}, ${match.status}`);
 
-            document.getElementById("matches").innerHTML = relevantData.map(match => `<li>${match} </li>`).join('');
+        const matchesElement = document.getElementById("matches");
 
-            return relevantData;
+        if (relevantData.length === 0) {
+            matchesElement.innerHTML = "<p>No current matches for the specified series.</p>";
+        } else {
+            matchesElement.innerHTML = relevantData.map(match => `<li>${match}</li>`).join('');
+        }
 
-        })
-        .catch(e => console.log(e));
+        return relevantData;
+    } catch (error) {
+        console.error("Error fetching match data:", error);
+        document.getElementById("matches").innerHTML = "<p>Error fetching match data. Please try again later.</p>";
+    }
 }
 
 getMatchData();
